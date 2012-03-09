@@ -33,24 +33,35 @@
 EOxServer Users' Guide
 ======================
 
-This section is intended for users of the EOxServer software stack. Users range 
-from administrators installing and configuring the software stack over 
-operators registering the available data to end users consuming the registered 
-data.
+This section is intended for users of the EOxServer software stack. Users range  
+from administrators installing and configuring the software stack and operators 
+registering the available *EO Data* on the *Provider* side to end users 
+consuming the registered *EO Data* on the *User* side.
+
+.. figure:: images/Global_Use_Case.png
+   :align: center
 
 Developers needing to know all the nitty-gritty about EOxServer implementation 
 and APIs please refer to the :ref:`EOxServer Developers' Guide`.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    
-   getting_started
+   basics
    global_use_case
+   install
+   centos_installation
    mailing_lists
    demonstration
    EO-WCS_request_parameters
-   install
-   admin_tutorial
-   synchronization
-   idm
+   operators
+   webclient
+   idm/index
    soap_proxy
+   presentations
+   configuration_options
+   atp_sum 
+
+.. TODO
+   users     - empty
+   reference - empty

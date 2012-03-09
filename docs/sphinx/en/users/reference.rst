@@ -1,4 +1,4 @@
-.. Administration Web Application Tutorial
+.. EOxServer Reference
   #-----------------------------------------------------------------------------
   # $Id$
   #
@@ -28,11 +28,11 @@
   # IN THE SOFTWARE.
   #-----------------------------------------------------------------------------
 
-.. index::
-   single: Administration Web Application Tutorial
-   single: Administration Web Application
+.. _EOxServer Reference:
 
-.. _Administration Web Application Tutorial:
+EOxServer Reference
+===================
 
-Administration Web Application Tutorial
-=======================================
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top

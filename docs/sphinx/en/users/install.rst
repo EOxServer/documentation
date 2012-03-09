@@ -37,8 +37,14 @@
 Installation
 ============
 
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
 Before you can use EOxServer, you’ll need to get it installed. Following this 
 guide will give you a simple, minimal though working installation.
+
+A guide for the :ref:`CentOSInstallation` is also available.
 
 .. index::
     single: EOxServer Dependencies
@@ -168,14 +174,19 @@ switch to your pip command e.g.:
 
   sudo pip install --upgrade eoxserver
 
-
 If the directory EOxServer is installed to is not on the Python path, you will 
 have to configure the deployed instances accordingly, see 
 :ref:`EOxServer Deployment` below.
 
+The successful installation of EOxServer can be tested using the 
+:ref:`autotest instance <Autotest>` which is described in more detail in the 
+:ref:`EOxServer Developers' Guide`.
+
 .. index::
     single: EOxServer Instance Creation
     single: Instance Creation
+
+.. _Creating an Instance:
 
 Creating an Instance
 --------------------
@@ -251,32 +262,26 @@ database. If using the `create_instance` command of the
 have to do is:
 
 * Make sure EOxServer is on your ``PYTHONPATH`` environment variable
-* run ``python manage.py syncdb`` in your instance directory
+* run in your instance directory
+  ::
 
-Using a PostgreSQL/PostGIS database back-end configuration is a little bit more 
-complex. Please refer to `GeoDjango Database API 
-<https://docs.djangoproject.com/en/1.3/ref/contrib/gis/db-api/>`_ for more 
-instructions. On a \*NIX system, the setup process might look like this:
+    python manage.py syncdb
 
-    # first a template 
+.. TODO: Logfile handling: configuration in settings.py and eoxserver.conf logrotate, etc.
 
-.. TODO: Logfile handling:
-    configuration in settings.py and eoxserver.conf
-    logrotate, etc.
-
-.. index::
-    single: EOxServer Deployment
-    single: Deployment
+.. _Database Setup:
 
 Database Setup
 ~~~~~~~~~~~~~~
 
-Before proceeding, please be sure that you have installed all required software
-for the database system of your choice. Please refer to  TODO 
+This section is only needed if the ``--init_spatialite`` flag was not used 
+during instance creation or a PostgreSQL/PostGIS database back-end shall be 
+used. Before proceeding, please make sure that you have installed all required 
+software for the database system of your choice.
 
 Using a SQLite database, all you have to do is to copy the
 ``TEMPLATE_config.sqlite`` and place it somewhere in your instance directory.
-Now you have to edit the ``DATABASES`` your ``settings.py`` file with the
+Now you have to edit the ``DATABASES`` of your ``settings.py`` file with the
 following lines:
 ::
 
@@ -287,18 +292,24 @@ following lines:
         }
     }
 
-Setting up a PostgreSQL database for EOxServer requires also installing the
-PostGIS extensions (the following example is an installation based on a Debian
-system):
+
+Using a PostgreSQL/PostGIS database back-end configuration for EOxServer is a 
+little bit more complex. Setting up a PostgreSQL database requires also 
+installing the PostGIS extensions (the following example is an installation 
+based on a Debian system):
 ::
 
     sudo su - postgres
     POSTGIS_DB_NAME=eoxserver_db
     POSTGIS_SQL_PATH=`pg_config --sharedir`/contrib/postgis-1.5
     createdb $POSTGIS_DB_NAME
+    createlang plpgsql $POSTGIS_DB_NAME
     psql -d $POSTGIS_DB_NAME -f $POSTGIS_SQL_PATH/postgis.sql
     psql -d $POSTGIS_DB_NAME -f $POSTGIS_SQL_PATH/spatial_ref_sys.sql
     psql -d $POSTGIS_DB_NAME -f `pg_config --sharedir`/contrib/hstore-new.sql
+    psql -d $POSTGIS_DB_NAME -c "GRANT ALL ON geometry_columns TO PUBLIC;"
+    psql -d $POSTGIS_DB_NAME -c "GRANT ALL ON geography_columns TO PUBLIC;"
+    psql -d $POSTGIS_DB_NAME -c "GRANT ALL ON spatial_ref_sys TO PUBLIC;"
 
 This creates the database and installs the PostGIS extensions within the
 database. Now a user with password can be set with the following line:
@@ -320,6 +331,13 @@ In the ``settings.py`` the following entry has to be added:
         }
     }
 
+Please refer to `GeoDjango Database API 
+<https://docs.djangoproject.com/en/1.3/ref/contrib/gis/db-api/>`_ for more 
+instructions.
+
+.. index::
+    single: EOxServer Deployment
+    single: Deployment
 
 .. _EOxServer Deployment:
 
@@ -365,12 +383,13 @@ In the Apache2 configuration file for your server, e.g.
 This setup will deploy your instance under the URL ``<url>`` and make it 
 publicly accessible.
 
+.. _Data Registration:
+
 Data Registration
 ~~~~~~~~~~~~~~~~~
 
 To insert data into an EOxServer instance there are several ways. One is the
-admin interface, which is explained in detail in the :ref:`Administration Web
-Application Tutorial`.
+admin interface, which is explained in detail in the :ref:`ops_admin` section.
 
 Another convenient way to register datasets is the command line interface to
 EOxServer. As a Django application, the instance can be configured using the
@@ -423,6 +442,11 @@ Only the ``--host`` parameter is mandatory, all others are optional.
 The ``--default-srid`` parameter is required when the SRID cannot be determined
 automatically, as for example with rasdaman datasets.
 
+With the ``--visible`` option, all registered datasets can be marked as either
+visible (``true``) or invisible (``false``). This effects the advertisment of
+the dataset in e.g: GetCapabilities responses. By default, all datasets are
+visible.
+
 This is an example usage of the ``eoxs_register_dataset`` command:
 ::
 
@@ -438,3 +462,47 @@ executing shell and is most certainly platform dependant.
 
 The registered dataset is also inserted to the given dataset series and 
 rectified stitched mosaic.
+
+Here is the full list of available options:
+
+    -d, --data-file, --data-files, --collection, --collections
+                        Mandatory. One or more paths to a files containing the
+                        image data. These paths can either be local, ftp
+                        paths, or rasdaman collection names.
+    -m, --metadata-file, --metadata-files
+                        Optional. One or more paths to a local files
+                        containing the image meta data. Defaults to the same
+                        path as the data file with the ".xml" extension.
+    -r RANGETYPE, --rangetype=RANGETYPE
+                        Mandatory identifier of the rangetype used in the
+                        dataset.
+    --dataset-series      Optional. One or more eo ids of a dataset series in
+                        which the created datasets shall be added.
+    --stitched-mosaic     Optional. One or more eo ids of a rectified stitched
+                        mosaic in which the dataset shall be added.
+    -i, --coverage-id, --coverage-ids
+                        Optional. One or more coverage identifier for each
+                        dataset that shall be added. Defaults to the base
+                        filename without extension.
+    --mode=MODE           Optional. Defines the location of the datasets to be
+                        registered. Can be 'local', 'ftp', or 'rasdaman'.
+                        Defaults to 'local'.
+    --host=HOST           Mandatory when mode is not 'local'. Defines the
+                        ftp/rasdaman host to locate the dataset.
+    --port=PORT           Optional. Defines the port for ftp/rasdaman host
+                        connections.
+    --user=USER           Optional. Defines the ftp/rasdaman user for the
+                        ftp/rasdaman connection.
+    --password=PASSWORD   Optional. Defines the ftp/rasdaman user password for
+                        the ftp/rasdaman connection.
+    --database=DATABASE   Optional. Defines the rasdaman database containing the
+                        data.
+    --oid, --oids         Optional. List of rasdaman oids for each dataset to be
+                        inserted.
+    --default-srid=DEFAULT_SRID
+                        Optional. Default SRID, needed if it cannot be
+                        determined automatically by GDAL.
+    --visible=VISIBLE     Optional. Sets the visibility status of all datasets
+                        to thegiven boolean value. Defaults to 'True'.
+    --version             show program's version number and exit
+    -h, --help            show this help message and exit

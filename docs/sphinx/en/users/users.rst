@@ -1,4 +1,4 @@
-.. Modules Overview
+.. EOxServer Application Users' Guide
   #-----------------------------------------------------------------------------
   # $Id$
   #
@@ -28,76 +28,11 @@
   # IN THE SOFTWARE.
   #-----------------------------------------------------------------------------
 
-.. _Modules Overview:
+.. _EOxServer Application Users' Guide:
 
-Modules
-=======
+EOxServer Application Users' Guide
+==================================
 
 .. contents:: Table of Contents
     :depth: 3
     :backlinks: top
-
-EOxServer Core
---------------
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   
-   core/*
-
-Utils
------
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   
-   core/util/*
-
-Service Layer
--------------
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   
-   services/*
-   services/ows/*
-
-Processing Layer
-----------------
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   
-   processing/*
-
-Data Integration Layer
-----------------------
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   
-   resources/*
-   resources/coverages/*
-
-Data Access Layer
------------------
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   
-   backends/*
-
-Testing
--------
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   
-   testing/*

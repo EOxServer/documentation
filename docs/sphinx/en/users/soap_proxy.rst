@@ -32,6 +32,10 @@
 SOAP Proxy
 ==========
 
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
 SOAP Access to WCS
 ------------------
 
@@ -55,23 +59,117 @@ corresponding WSDL file may be downloaded at the URL
 Installation
 ------------
 
-
 A quick-intall quide is provided below.  For a full installation guide see the
 INSTALL file in the source tree.
 
-Quick installation guide
-~~~~~~~~~~~~~~~~~~~~~~~~
+Quick installation guide for EOxServer on CentOS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+0. Prerequisites:
+.................
+
+* :ref:`EOxServer <Installation>` installed and configured, including 
+  MapServer and Apache HTTP Server
+* Add the yum repository available at http://packages.eox.at (recommended) or
+  obtain the RPM packages from http://packages.eox.at/centos/x86_64/.
+
+1. Basic install:
+.................
+
+The following standard installation sets up soap_proxy for an installed eoxserver
+service accessible at http://127.0.0.1/eoxserver/ows
+
+Via the repository::
+
+  sudo yum install axis2c_eo eo_soap_proxy
+  sudo /etc/init.d/httpd restart
+
+or the packages::
+
+  sudo rpm -i axis2c_eo-1.6.0-3.x86_64.rpm
+  sudo rpm -i eo_soap_proxy-1.0.0-1.x86_64.rpm
+  sudo /etc/init.d/httpd restart
+
+2. Test:
+........
+
+To test open a webbrowser to the page:
+
+  http://<your_server>/sp_eowcs?wsdl
+
+You should see the wsdl.
+
+Further testing may be done via soapui.  See the file 
+``soap_proxy/test/README.txt`` in the source tree.
+
+
+3. Add another service:
+.......................
+
+To add another service to the basic installation, perform the following steps
+as root:
+
+By way of example let us say our new soap_proxy service shall be available at
+http://example.org/sp_foo, and the corresponding backend eoxserver is
+accessible at  http://127.0.0.1/eoxs_foo
+
+First, in the directory ``/usr/local/share/axis2c/services`` recursively copy
+the subdirectory ``soapProxy`` to ``soapFoo``::
+
+  cp -r soapProxy soapFoo
+  cd soapFoo
+
+In ``soapFoo`` rename ``libsoapProxy.so`` and ``soapProxy.wsdl``::
+
+  mv libsoapProxy.so libsoapFoo.so
+  mv soapProxy.wsdl soapFoo.wsdl
+
+Note that if selinux is enabled you may need adjust the object type of
+``libsoapFoo.so``.
+
+edit ``soapFoo.wsdl`` - at the bottom of the file chage  ``soap:address location``
+to the new endpoint::
+
+  <soap:address location="http://example.org/sp_foo"/>
+
+edit ``services.xml`` - change ServiceClass, BackendURL, and SOAPOperationsURL::
+
+  <parameter name="ServiceClass" locked="xsd:false">soapFoo</parameter>
+  <parameter name="BackendURL">http://127.0.0.1/eoxs_foo/ows</parameter>
+  <parameter name="SOAPOperationsURL">http://example.org/sp_foo</parameter>
+
+Optionally, you may consider updating the ``<description>``.
+
+Edit the file ``/etc/httpd/conf.d/030_axis2c.conf``:  In the block ``<IfModule
+mod_proxy.c>``, add 'ProxyPass' and 'ProxyPassReverse' lines corresponding to
+your new service::
+
+  ProxyPass         /sp_foo  http://127.0.0.1/sp_axis/services/soapFoo
+  ProxyPassReverse  /sp_foo  http://127.0.0.1/sp_axis/services/soapFoo
+
+
+Old installation guide without rpms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 0. Prerequisites:
 .................
 The following is required before you can proceed with installing soap_proxy:
 
 * ``mapserver`` installed & configured.
-* Apache ``httpd2`` server installed and running
+* Apache ``httpd`` server(``httpd2`` on some systems) installed and running
+* ``eoxserver`` is optional
 
+1. Old Non-rpm installation
+...........................
 
-1. Install and configure axis2/c.
-.................................
+This is suitable for general installation e.g. if you are not using
+eoxerver but wish to use mapserver direcly.
+
+**Warning**: some of the configuration details are out of date, but
+the changes are not structural.
+
+Also see the INSTALL file in the source tree.
+
 Download from http://ws.apache.org/axis2/c/download.cgi
 
 Make a directory for the code::
@@ -168,3 +266,5 @@ execute::
 Restart you httpd server and check that http://127.0.0.1/o3s_axis/services
 shows the soapProxy service offering the four EO-WCS operations.
 
+Further testing may be done via soapui.  See the file 
+``soap_proxy/test/README.txt`` in the source tree.
