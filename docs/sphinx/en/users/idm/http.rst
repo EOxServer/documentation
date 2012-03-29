@@ -1,6 +1,6 @@
 .. Identity Management System
   #-----------------------------------------------------------------------------
-  # $Id: idm.rst 1422 2012-03-04 01:59:18Z meissls $
+  # $Id$
   #
   # Project: EOxServer <http://eoxserver.org>
   # Authors: Arndt Bonitz <arndt.bonitz@ait.ac.at>
@@ -27,7 +27,7 @@
   # IN THE SOFTWARE.
   #-----------------------------------------------------------------------------
 
-.. _Identity Management System:
+.. _Identity Management System HTTP:
 
 Identity Management System: HTTP Components
 ===========================================

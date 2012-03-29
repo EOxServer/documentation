@@ -1,6 +1,6 @@
 .. EOxServer English Documentation Index file
   #-----------------------------------------------------------------------------
-  # $Id: index.rst 1413 2012-03-02 17:41:31Z krauses $
+  # $Id$
   #
   # Project: EOxServer <http://eoxserver.org>
   # Authors: Stephan Krause <stephan.krause@eox.at>
@@ -31,7 +31,7 @@
 .. _Identity Management System:
 
 Identity Management System
-===========================
+==========================
 
 .. contents:: Table of Contents
     :depth: 4
@@ -105,10 +105,10 @@ can access the data and services provided by EOxServer. The attributes from
 Shibboleth are used by the EOxServer security components to make a 
 XACMLAuthzDecisionQuery to the Charon Authorisation Service.
 
-Installation and Configuration
-==============================
+Identity Management System: Installation and Configuration
+==========================================================
 
-The following services are needed for the both the HTTP and SOAP security part:
+The following services are needed both for the HTTP and the SOAP security part:
 
 * Charon :ref:`Authorisation_Service`.
 * :ref:`LDAP_Directory`.
@@ -129,9 +129,9 @@ Prerequisites
 Download locations for the IDMS components:
 
 * Shibboleth: http://shibboleth.internet2.edu/downloads.html
-* CHARON Authorisation Service: http://www.enviromatics.net/charon/ or http://eox.at 
-* Security Token Service: http://eox.at    
-* PEP Service: http://eox.at 
+* CHARON Authorisation Service: http://www.enviromatics.net/charon/ or http://packages.eox.at/idm/
+* Security Token Service: http://packages.eox.at/idm/
+* PEP Service: http://packages.eox.at/idm/
 * EOxServer: http://eoxserver.org/wiki/Download
 
 
@@ -214,9 +214,10 @@ Now you have to configure the service. All configuration files are in the
 - You can change the database connection in the ``config/GeoPDP.xml`` 
   configuration file if necessary. 
 
-To add new XACML policies to the Authorisation Service, refer to the :ref:`XACML `.
+To add new XACML policies to the Authorisation Service, refer to the 
+:ref:`XACML Policies`.
 
-.. _XACML:    
+.. _XACML Policies:    
 
 XACML Policies for the Authorisation Service
 ````````````````````````````````````````````

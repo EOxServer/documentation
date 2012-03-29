@@ -230,6 +230,160 @@ Multiple datasets which are spatially and/or temporally overlapping can be
 organized in a Dataset Series. Furthermore Stitched Mosaics can also be 
 organized in Dataset Series.
 
+.. _ops_data:
+
+Data Preparation and Supported Data Formats
+-------------------------------------------
+
+EO Coverages consist of raster data and metadata. The way this data is
+stored can vary considerably. EOxServer supports a wide range of different
+data and metadata formats which are described below.
+
+Raster Data Formats
+~~~~~~~~~~~~~~~~~~~
+
+EOxServer uses the `GDAL <http://www.gdal.org>`_ library for raster data
+handling. So does `MapServer <http://www.mapserver.org>`_ whose scripting API
+(MapScript) is used by EOxServer as well. In principle, any `format supported
+by GDAL <http://www.gdal.org/formats_list.html>`_ can be read by EOxServer and
+registered in the database.
+
+There is, however, one caveat. Most data formats are composed of bands which
+contain the data (e.g. ENVISAT N1, GeoTIFF, JPEG 2000). But some data formats
+(notably netCDF and HDF) have a different substructure: subdatasets. At the
+moment these data formats are only supported for data output, but not for data
+input.
+
+Raster Data Preparation
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Usually, raster data does not need to be prepared in a special way to be
+ingested into EOxServer.
+
+If the raster data file is structured in subdatasets, though, as is the case
+with netCDF and HDF, you will have to convert it to another format. You can use
+the ``gdal_translate`` command for that task::
+
+  $ gdal_translate -of <Output Format> <Input File Name> <Output File Name>
+
+You can display the list of possible output formats with::
+
+  $ gdalinfo --formats
+  
+For automatic registration of datasets, EOxServer relies on the geospatial
+metadata stored with the dataset, notably the EPSG ID of the coordinate
+reference system and the geospatial extent. In some cases the CRS information
+in the dataset does not contain the EPSG code. If you are using the command
+line interfaces of EOxServer you can specify an SRID with the ``--default-srid``
+option. As an alternative you can try to add the corresponding information to
+the dataset, e.g. with::
+
+  $ gdal_translate -a_srs "+init=EPSG:<SRID>" <Input File Name> <Output File Name>
+
+For performance reasons, especially if you are using WMS, you might also
+consider to add overviews to the raster data files using the ``gdaladdo``
+command (`documentation <http://www.gdal.org/gdaladdo.html>`_). Note however
+that this is supported only by a few formats like GeoTIFF and JPEG2000.
+
+Metadata Formats
+~~~~~~~~~~~~~~~~
+
+There are two possible ways to store metadata: the first one is to store it
+in the data file itself, the second one is to store it in an accompanying
+metadata file.
+
+Only a subset of the supported raster data formats are capable of storing
+metadata in the data file. Furthermore there are no standards defining
+the semantics of the metadata for generic formats like GeoTIFF. For mission
+specific formats, however, there are thorough specifications in place.
+
+EOxServer supports reading basic metadata from ENVISAT N1 files and files that
+have a similar metadata structure (e.g. a GeoTIFF file with the same metadata
+tags).
+
+For other formats metadata files have to be provided. EOxServer supports two
+XML-based formats:
+
+* OGC Earth Observation Profile for Observations and Measurements (OGC 10-157r2)
+* an EOxServer native format
+
+Here is an example for EO O&M::
+
+    <?xml version="1.0" encoding="ISO-8859-1"?>
+    <eop:EarthObservation gml:id="eop_ASA_WSM_1PNDPA20050331_075939_000000552036_00035_16121_0775" xmlns:eop="http://www.opengis.net/eop/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:om="http://www.opengis.net/om/2.0">
+      <om:phenomenonTime>
+        <gml:TimePeriod gml:id="phen_time_ASA_WSM_1PNDPA20050331_075939_000000552036_00035_16121_0775">
+          <gml:beginPosition>2005-03-31T07:59:36Z</gml:beginPosition>
+          <gml:endPosition>2005-03-31T08:00:36Z</gml:endPosition>
+        </gml:TimePeriod>
+      </om:phenomenonTime>
+      <om:resultTime>
+        <gml:TimeInstant gml:id="res_time_ASA_WSM_1PNDPA20050331_075939_000000552036_00035_16121_0775">
+          <gml:timePosition>2005-03-31T08:00:36Z</gml:timePosition>
+        </gml:TimeInstant>
+      </om:resultTime>
+      <om:procedure />
+      <om:observedProperty />
+      <om:featureOfInterest>
+        <eop:Footprint gml:id="footprint_ASA_WSM_1PNDPA20050331_075939_000000552036_00035_16121_0775">
+          <eop:multiExtentOf>
+            <gml:MultiSurface gml:id="multisurface_ASA_WSM_1PNDPA20050331_075939_000000552036_00035_16121_0775" srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+              <gml:surfaceMember>
+                <gml:Polygon gml:id="polygon_ASA_WSM_1PNDPA20050331_075939_000000552036_00035_16121_0775">
+                  <gml:exterior>
+                    <gml:LinearRing>
+                      <gml:posList>-33.03902600 22.30175400 -32.53056000 20.09945700 -31.98492200 17.92562200 -35.16690300 16.72760500 -35.73368300 18.97694800 -36.25910700 21.26212300 -33.03902600 22.30175400</gml:posList>
+                    </gml:LinearRing>
+                  </gml:exterior>
+                </gml:Polygon>
+              </gml:surfaceMember>
+            </gml:MultiSurface>
+          </eop:multiExtentOf>
+        </eop:Footprint>
+      </om:featureOfInterest>
+      <om:result />
+      <eop:metaDataProperty>
+        <eop:EarthObservationMetaData>
+          <eop:identifier>ASA_WSM_1PNDPA20050331_075939_000000552036_00035_16121_0775</eop:identifier>
+          <eop:acquisitionType>NOMINAL</eop:acquisitionType>
+          <eop:status>ARCHIVED</eop:status>
+        </eop:EarthObservationMetaData>
+      </eop:metaDataProperty>
+    </eop:EarthObservation>
+
+The native format has the following structure::
+
+    <Metadata>
+        <EOID>some_unique_eoid</EOID>
+        <BeginTime>YYYY-MM-DDTHH:MM:SSZ</BeginTime>
+        <EndTime>YYYY-MM-DDTHH:MM:SSZ</EndTime>
+        <Footprint>
+            <Polygon>
+                <Exterior>Mandatory - some_pos_list as all-space-delimited Lat Lon pairs (closed polygon i.e. 5 coordinate pairs for a rectangle) in EPSG:4326</Exterior>
+                [
+                 <Interior>Optional - some_pos_list as all-space-delimited Lat Lon pairs (closed polygon) in EPSG:4326</Interior>
+                 ...
+                ]
+            </Polygon>
+        </Footprint>
+    </Metadata>
+
+The automatic registration tools for EOxServer (see below under :ref:`ops_cli`)
+expect that the metadata file accompanying the data file has the same name with
+``.xml`` as extension.
+
+
+Metadata Preparation
+~~~~~~~~~~~~~~~~~~~~
+
+EOxServer provides one tool to extract metadata from ENVISAT N1 files and
+convert it to EO O&M format. It can be found under ``tools/gen_envisat_md.py``.
+It accepts an input path to an N1 file and stores the resulting XML file under
+the same path with the appropriate file name (i.e. replacing the ``.N1``
+extension with ``.xml``). Note that EOxServer must be in the Python path and
+the environment variable ``DJANGO_SETTINGS_MODULE`` must be set and point to
+a properly configured EOxServer instance.
+
 .. _ops_admin:
 
 Admin Client
@@ -377,10 +531,38 @@ Besides this tool EOxServer adds some custom commands to Django's manage.py
 script. The ``eoxs_register_dataset`` command detailed in the :ref:`Data 
 Registration` section.
 
+eoxs_add_dataset_series
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``eoxs_add_dataset_series`` command allows the creation of a dataset series
+with initial data sources or coverages included. In it's simplest use case,
+only the ``--eoid`` parameter is required, which has to be a valid and not yet
+taken identifier for the Dataset Series.
+
+When supplied with the ``--data-sources`` parameter, given data sources will be
+added once the Dataset Series is created. When using the ``--data-sources`` it
+is highly recommended to also use ``--patterns``, a list of search patterns
+which will be used for the data source of the same index. When only one
+``--pattern`` is given, it is used for all data sources.
+
+Unless the ``--no-sync`` parameter is given, this also triggers a
+synchronization as explained in the chaper :ref:`what_is_sync`. 
+
+Already registered datasets can be automatically added to the Dataset Series by
+using the ``--add`` option which takes a list of IDs referencing either
+Rectified Datasets, Referenceable Datasets and Rectified Stitched Mosaics.
+
+The optional ``--default-begin-time``, ``--default-end-time`` and
+``--default-footprint`` parameters can be used to supply some default metadata
+values. Note: once the Dataset Series is synchronized, these values are
+overridden.
+
 eoxs_synchronize
 ~~~~~~~~~~~~~~~~
 
 This command allows to synchronize an EOxServer instance with the file system.
+
+.. _what_is_sync:
 
 What is synchronization?
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -432,3 +614,52 @@ ensuring the databases consistency with the file system.
 
 The synchronization process may take some time, especially when FTP/Rasdaman
 storages are used and also depends on the number of synchronized objects.
+
+Performance
+-----------
+
+The performance of different EOxServer tasks and services depends heavily on
+the hardware infrastructure and the data to be handled. Tests were made for
+two typical operator use cases:
+
+* registering a dataset
+* generating a mosaic
+
+The tests for registering datasets were performed on a quad-core machine
+with 4 GB of RAM and with a SQLite/SpatiaLite database. The test datasets
+were 58 IKONOS multispectral (4-band 16-bit), 58 IKONOS panchromatic (1-band
+16-bit) and 58 IKONOS pansharpened (3-band 8-bit) scenes in GeoTIFF format with
+file sizes ranging between 60 MB and 1.7 GB. The file size did not have any
+discernible impact on the time it took to register. The average registration
+took about 61 ms, meaning that ingesting nearly 1000 datasets per minute is
+possible.
+
+The generation of mosaics was performed on a virtual machine with one
+CPU core allocated and 4 GB of RAM. Yet again, the input data were IKONOS
+scenes in GeoTIFF format.
+
+==================== ============= ===== =============== =============== ======== ===============
+Datasets             Data Type     Files Input File Size Tiles Generated Time     GB per minute
+==================== ============= ===== =============== =============== ======== ===============
+IKONOS multispectral 4-band 16-bit 68    8.9 GB          8.819           10 m     0.89 GB
+IKONOS panchromatic  1-band 16-bit 68    35.1 GB         126.750         1:05 h   0.54 GB
+IKONOS pansharpened  3-band  8-bit 68    52.7 GB         126.750         1:46 h   0.49 GB
+==================== ============= ===== =============== =============== ======== ===============
+
+As the results show the file size of the input files has a certain impact on
+performance, but the effect seems to level off.
+
+Regarding the performance of the services there are many influence factors:
+
+* the hardware configuration of the machine
+* the network connection bandwith
+* the database configuration (SQLite or PostGIS)
+* the format and size of the raster data files
+* the processing steps necessary to fulfill the request (e.g. resampling,
+  reprojection)
+* the coverage type (processing referenceable grid coverages is considerably
+  more expensive than processing rectified grid coverages)
+* the setup of IDM components (if any)
+
+For hints on improving performance of the services see :ref:`install_hw`,
+:ref:`ops_data` and :ref:`webclient_mapcache`.

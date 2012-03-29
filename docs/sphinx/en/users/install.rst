@@ -50,6 +50,42 @@ A guide for the :ref:`CentOSInstallation` is also available.
     single: EOxServer Dependencies
     single: Dependencies
 
+.. _install_hw:
+
+Hardware Requirements
+---------------------
+
+EOxServer has been deployed on a variety of different computers and virtual
+machines with commonplace hardware configurations. The typical setup is:
+
+* a dual-core or quad-core CPU
+* 1 to 4 GB of RAM
+
+The image processing operations required for certain OGC Web Service requests
+(subsetting, reprojection, resampling) may be quite expensive in terms of
+CPU load and memory consumption, so adding more RAM or an additional core (for
+VMs) may increase the performance of the service. Bear in mind however, that
+disk I/O speed is often a bottleneck.
+
+EOxServer itself requires about 15 MB of disk space. Usually, the data
+to be served has a magnitude of 10-100 GB or larger. So, this will be the
+determining factor when choosing the appropriate disk size. Note that
+for Rectified Stitched Mosaics, EOxServer will generate mosaic tiles from the
+original data which requires additional disk space up to the space occupied by
+the composing Rectified Datasets (depending on how much they overlap).
+
+EOxServer itself does not have any GUI other than the Web Administration Client
+and Web Map Client and thus no graphics support is required on the server.
+
+Running (parts of) the Identity Management System (see :doc:`idm/index`) on the
+same machine as EOxServer puts additional load on the server. Usually, running
+the Tomcat server will require about 512 MB of RAM. Note that the different
+components of the IDM may be deployed on different machines. The additional
+network latency for checking a remote PDP on every incoming request may have a
+considerable impact on the performance of the services (in particular WMS), 
+though, and thus it may be preferable to run the PDP on the same machine as
+EOxServer.
+
 Dependencies
 ------------
 
@@ -65,7 +101,7 @@ to run EOxServer.
     +===========+==================+===========================================+
     | Python    | >= 2.5, < 3.0    | Scripting language                        |
     +-----------+------------------+-------------------------------------------+
-    | Django    | >= 1.2           | Web development framework written in      |
+    | Django    | >= 1.3           | Web development framework written in      |
     |           |                  | Python including the GeoDjango extension  |
     |           |                  | for geospatial database back-ends.        |
     +-----------+------------------+-------------------------------------------+
@@ -416,10 +452,13 @@ observation specific metadata. The optional parameter ``--metadata-file`` shall
 contain a list of paths to these files, where the items of this list refer to
 the data files with the same index of the according option. This parameter can
 also be omitted, in this case for each data file a metadata file is assumed
-with the same path, but with an `.xml` extension. When inserting datasets
-located in a Rasdaman database, this parameter is mandatory, since the metadata
-cannot be retrieved from within the rasdaman database and must be locally
-accessible.
+with the same path, but with an `.xml` extension, although it is only used when
+this file actually exists. Otherwise the datafile itself is used to retrieve
+the metadata values.
+
+When inserting datasets located in a Rasdaman database, this parameter is
+mandatory, since the metadata cannot be retrieved from within the rasdaman
+database and must be locally accessible.
 
 For each dataset a coverage ID can be specified with the ``--coverage-id``
 parameter. As with the ``--metadata-file`` option, the items of the list refer
@@ -441,6 +480,21 @@ Only the ``--host`` parameter is mandatory, all others are optional.
 
 The ``--default-srid`` parameter is required when the SRID cannot be determined
 automatically, as for example with rasdaman datasets.
+
+For when you explicitly want to override the geospatial metadata of a dataset
+you can use ``--default-size`` and ``--default-extent``. Both parameters need
+to be used together and in combination with ``--default-srid``. This is
+required for datasets registered in a rasdaman database or for any other
+input method where the geospatial metadata cannot be retrieved.
+
+For datasets that do not have any EO metadata associated and want to be
+inserted anyways, the options ``--default-begin-time``, ``--default-end-time``
+and ``--default-footprint`` have to be used. These meta data values will only
+be used when no local meta data file is found (remote files are not checked).
+All three options have to be used in combination, so it is, for example, not
+possible to only provide the footprint via ``--default-footprint`` and let
+EOxServer gather the rest. There is one exception: when only begin and end
+dates are given, the footprint is generated using the image extent.
 
 With the ``--visible`` option, all registered datasets can be marked as either
 visible (``true``) or invisible (``false``). This effects the advertisment of
@@ -465,44 +519,69 @@ rectified stitched mosaic.
 
 Here is the full list of available options:
 
-    -d, --data-file, --data-files, --collection, --collections
+  -v VERBOSITY, --verbosity=VERBOSITY
+                        Verbosity level; 0=minimal output, 1=normal output,
+                        2=all output
+  --settings=SETTINGS   The Python path to a settings module, e.g.
+                        "myproject.settings.main". If this isn't provided, the
+                        DJANGO_SETTINGS_MODULE environment variable will be
+                        used.
+  --pythonpath=PYTHONPATH
+                        A directory to add to the Python path, e.g.
+                        "/home/djangoprojects/myproject".
+  --traceback           Print traceback on exception
+  -d, --data-file, --data-files, --collection, --collections
                         Mandatory. One or more paths to a files containing the
                         image data. These paths can either be local, ftp
                         paths, or rasdaman collection names.
-    -m, --metadata-file, --metadata-files
+  -m, --metadata-file, --metadata-files
                         Optional. One or more paths to a local files
                         containing the image meta data. Defaults to the same
                         path as the data file with the ".xml" extension.
-    -r RANGETYPE, --rangetype=RANGETYPE
+  -r RANGETYPE, --rangetype=RANGETYPE
                         Mandatory identifier of the rangetype used in the
                         dataset.
-    --dataset-series      Optional. One or more eo ids of a dataset series in
+  --dataset-series      Optional. One or more eo ids of a dataset series in
                         which the created datasets shall be added.
-    --stitched-mosaic     Optional. One or more eo ids of a rectified stitched
+  --stitched-mosaic     Optional. One or more eo ids of a rectified stitched
                         mosaic in which the dataset shall be added.
-    -i, --coverage-id, --coverage-ids
+  -i, --coverage-id, --coverage-ids
                         Optional. One or more coverage identifier for each
                         dataset that shall be added. Defaults to the base
                         filename without extension.
-    --mode=MODE           Optional. Defines the location of the datasets to be
+  --mode=MODE           Optional. Defines the location of the datasets to be
                         registered. Can be 'local', 'ftp', or 'rasdaman'.
                         Defaults to 'local'.
-    --host=HOST           Mandatory when mode is not 'local'. Defines the
+  --host=HOST           Mandatory when mode is not 'local'. Defines the
                         ftp/rasdaman host to locate the dataset.
-    --port=PORT           Optional. Defines the port for ftp/rasdaman host
+  --port=PORT           Optional. Defines the port for ftp/rasdaman host
                         connections.
-    --user=USER           Optional. Defines the ftp/rasdaman user for the
+  --user=USER           Optional. Defines the ftp/rasdaman user for the
                         ftp/rasdaman connection.
-    --password=PASSWORD   Optional. Defines the ftp/rasdaman user password for
+  --password=PASSWORD   Optional. Defines the ftp/rasdaman user password for
                         the ftp/rasdaman connection.
-    --database=DATABASE   Optional. Defines the rasdaman database containing the
+  --database=DATABASE   Optional. Defines the rasdaman database containing the
                         data.
-    --oid, --oids         Optional. List of rasdaman oids for each dataset to be
+  --oid, --oids         Optional. List of rasdaman oids for each dataset to be
                         inserted.
-    --default-srid=DEFAULT_SRID
+  --default-srid=DEFAULT_SRID
                         Optional. Default SRID, needed if it cannot be
                         determined automatically by GDAL.
-    --visible=VISIBLE     Optional. Sets the visibility status of all datasets
+  --default-size=DEFAULT_SIZE
+                        Optional. Default size, needed if it cannot be
+                        determined automatically by GDAL. Format:
+                        <sizex>,<sizey>
+  --default-extent=DEFAULT_EXTENT
+                        Optional. Default extent, needed if it cannot be
+                        determined automatically by GDAL. Format:
+                        <minx>,<miny>,<maxx>,<maxy>
+  --default-begin-time  Optional. Default begin timestamp when no other EO-
+                        metadata is available. The format is ISO-8601.
+  --default-end-time    Optional. Default end timestamp when no other EO-
+                        metadata is available. The format is ISO-8601.
+  --default-footprint   Optional. The default footprint in WKT format when no
+                        other EO-metadata is available.s
+  --visible=VISIBLE     Optional. Sets the visibility status of all datasets
                         to thegiven boolean value. Defaults to 'True'.
-    --version             show program's version number and exit
-    -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
