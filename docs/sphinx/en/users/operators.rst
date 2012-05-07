@@ -163,6 +163,20 @@ values that indicate that there is no measurement at the given position).
 This range type metadata is used in the coverage description metadata that is
 returned by WCS operations and for configuring WMS layers.
 
+Note that WMS supports only one data type (Byte) and only Grayscale and RGB
+output. Any other range types will be mapped to these: for single-band coverages,
+Grayscale output is generated and RGB output using the first three bands for all
+others. Automatic scaling is applied when mapping from another data type to
+Byte. That means the minimum-maximum interval for the given subset of the
+coverage is computed and mapped to the 0-255 interval supported by the Byte
+data type.
+
+If you want to view other band combinations than the default ones, you can use
+the EO-WMS features implemented by EOxServer. For each coverage, an additional
+layers called ``<coverage id>_bands`` is provided for WMS 1.3. Using this
+layer and the ``DIM_BAND`` KVP parameter you can select another combination
+of bands (either 1 or 3 bands).
+
 .. _ops_eo_md:
 
 EO Metadata
@@ -536,7 +550,7 @@ eoxs_add_dataset_series
 
 The ``eoxs_add_dataset_series`` command allows the creation of a dataset series
 with initial data sources or coverages included. In it's simplest use case,
-only the ``--eoid`` parameter is required, which has to be a valid and not yet
+only the ``--eo-id`` parameter is required, which has to be a valid and not yet
 taken identifier for the Dataset Series.
 
 When supplied with the ``--data-sources`` parameter, given data sources will be
@@ -544,6 +558,24 @@ added once the Dataset Series is created. When using the ``--data-sources`` it
 is highly recommended to also use ``--patterns``, a list of search patterns
 which will be used for the data source of the same index. When only one
 ``--pattern`` is given, it is used for all data sources.
+
+Range types for datasets can be read from configuration files that are 
+accompany them. There can be a configuration file for each dataset or one 
+that applies to all datasets contained within a directory corresponding to a 
+data source. Configuration files have the file extension ``.conf``. The file 
+name is the same as the one of the dataset (so the dataset ``foo.tiff`` 
+needs to be accompanied by ``foo.conf``) or ``__default__.conf`` if you want 
+to use the config file for the whole directory. The syntax for the file is 
+as follows::
+
+   [range_type]
+   range_type_name=<range type name>
+
+Both approaches may be combine and configuration files produced only for 
+some of the datasets in a directory and a default range type defined in 
+``__default__.conf``. EOxServer will first look up the dataset configuration 
+file and fall back to the default only if there is no individual ``.conf`` 
+file.
 
 Unless the ``--no-sync`` parameter is given, this also triggers a
 synchronization as explained in the chaper :ref:`what_is_sync`. 
